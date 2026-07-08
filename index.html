@@ -236,11 +236,35 @@
     background: var(--bg); padding: 30px;
   }
   body.phone .phonegate { display: flex; }
-  body.phone .wrap, body.phone .goalfx { display: none; }
+  body.phone .wrap, body.phone .goalfx, body.phone .safety { display: none; }
   .phonegate .big { font-size: 64px; margin-bottom: 20px; }
   .phonegate h2 { font-size: 26px; font-weight: 800; margin-bottom: 14px; }
   .phonegate p { color: var(--muted); font-size: 18px; line-height: 1.6; font-weight: 600; max-width: 420px; }
   .phonegate .url { color: var(--accent); font-weight: 800; }
+
+  /* ---------- safety disclaimer ---------- */
+  .safety {
+    position: fixed; inset: 0; z-index: 90; display: none;
+    align-items: center; justify-content: center; padding: 30px;
+    background: rgba(4,6,10,.85); backdrop-filter: blur(10px);
+  }
+  .safety.on { display: flex; animation: fxin .3s ease both; }
+  .safety .card {
+    background: linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+    border: 2px solid rgba(255,197,66,.5); border-radius: 28px;
+    padding: 42px 48px; max-width: 560px; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    animation: rise .4s ease both;
+  }
+  .safety .big { font-size: 72px; margin-bottom: 18px; }
+  .safety h2 { font-size: 30px; font-weight: 900; margin-bottom: 16px; letter-spacing: .02em; color: var(--gold); }
+  .safety p { color: var(--text); font-size: 19px; line-height: 1.55; font-weight: 600; margin-bottom: 26px; }
+  .safety button {
+    min-height: 64px; padding: 0 40px; font-size: 20px; font-weight: 800; letter-spacing: .1em;
+    background: var(--accent); color: #04160c; border: none; border-radius: 999px;
+    cursor: pointer; font-family: inherit; transition: transform .18s ease;
+  }
+  .safety button:active { transform: scale(.96); }
 
   @media (max-width: 1100px) {
     .team img { width: 64px; height: 64px; }
@@ -272,6 +296,8 @@
     <span>Powered by <a href="https://www.espn.com/soccer/" target="_blank" rel="noopener">ESPN</a></span>
     <span class="sep">·</span>
     <a class="coffee" href="https://buymeacoffee.com/sajingeo" target="_blank" rel="noopener">☕ Buy me a coffee</a>
+    <span class="sep">·</span>
+    <a href="https://github.com/sajingeo/tesfifa" target="_blank" rel="noopener">💻 I'm open source — request a feature</a>
   </div>
 </div>
 
@@ -280,6 +306,15 @@
     <div class="big">🚗</div>
     <h2>Made for your Tesla</h2>
     <p>Open <span class="url">whileyoucharge.app</span> on your Tesla's browser to follow the World Cup live while parked or charging.</p>
+  </div>
+</div>
+
+<div class="safety" id="safety">
+  <div class="card">
+    <div class="big">🅿️</div>
+    <h2>PARKED USE ONLY</h2>
+    <p>For your safety, only use this website while your car is parked or charging. Never watch while driving.</p>
+    <button id="safetyOk">I'M PARKED</button>
   </div>
 </div>
 
@@ -297,6 +332,13 @@ function checkPhone() {
 }
 checkPhone();
 addEventListener("resize", checkPhone);
+
+if (!document.body.classList.contains("phone")) {
+  document.getElementById("safety").classList.add("on");
+}
+document.getElementById("safetyOk").addEventListener("click", () => {
+  document.getElementById("safety").classList.remove("on");
+});
 const API = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world";
 const R = 14, CIRC = 2 * Math.PI * R;
 document.getElementById("ringBar").setAttribute("stroke-dasharray", CIRC);
