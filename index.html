@@ -227,6 +227,7 @@
   .foot a { color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border: 1.5px solid var(--border); border-radius: 999px; background: var(--panel); transition: color .2s ease, border-color .2s ease; }
   .foot a:active { transform: scale(.96); }
   .foot .coffee { color: var(--gold); border-color: rgba(255,197,66,.35); }
+  .foot .gh { color: var(--accent); border-color: rgba(0,212,126,.3); }
   .foot .sep { opacity: .4; }
 
   /* ---------- phone gate ---------- */
@@ -246,23 +247,32 @@
   .safety {
     position: fixed; inset: 0; z-index: 90; display: none;
     align-items: center; justify-content: center; padding: 30px;
-    background: rgba(4,6,10,.85); backdrop-filter: blur(10px);
+    background: rgba(4,6,10,.88); backdrop-filter: blur(10px);
   }
   .safety.on { display: flex; animation: fxin .3s ease both; }
   .safety .card {
-    background: linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
-    border: 2px solid rgba(255,197,66,.5); border-radius: 28px;
-    padding: 42px 48px; max-width: 560px; text-align: center;
-    box-shadow: 0 20px 60px rgba(0,0,0,.6);
-    animation: rise .4s ease both;
+    background: linear-gradient(170deg, #161a24, #0b0e15);
+    border: 1.5px solid rgba(255,197,66,.45); border-radius: 28px;
+    padding: 46px 54px 42px; max-width: 580px; text-align: center;
+    box-shadow: 0 0 90px rgba(255,197,66,.08), 0 30px 80px rgba(0,0,0,.7);
+    animation: cardin .45s cubic-bezier(.2,1.2,.35,1) both;
   }
-  .safety .big { font-size: 72px; margin-bottom: 18px; }
-  .safety h2 { font-size: 30px; font-weight: 900; margin-bottom: 16px; letter-spacing: .02em; color: var(--gold); }
-  .safety p { color: var(--text); font-size: 19px; line-height: 1.55; font-weight: 600; margin-bottom: 26px; }
+  @keyframes cardin { from { opacity: 0; transform: scale(.9) translateY(16px);} to { opacity: 1; transform: none;} }
+  .safety .pbadge {
+    width: 84px; height: 84px; margin: 0 auto 24px; border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 50px; font-weight: 900; color: var(--gold);
+    border: 4px solid var(--gold);
+    box-shadow: 0 0 34px rgba(255,197,66,.28), inset 0 0 22px rgba(255,197,66,.08);
+  }
+  .safety h2 { font-size: 30px; font-weight: 900; margin-bottom: 14px; letter-spacing: .08em; color: var(--gold); }
+  .safety p { color: var(--muted); font-size: 19px; line-height: 1.6; font-weight: 600; margin-bottom: 30px; }
+  .safety p strong { color: var(--text); font-weight: 800; }
   .safety button {
-    min-height: 64px; padding: 0 40px; font-size: 20px; font-weight: 800; letter-spacing: .1em;
+    min-height: 68px; padding: 0 52px; font-size: 20px; font-weight: 800; letter-spacing: .12em;
     background: var(--accent); color: #04160c; border: none; border-radius: 999px;
     cursor: pointer; font-family: inherit; transition: transform .18s ease;
+    box-shadow: 0 12px 34px rgba(0,212,126,.3);
   }
   .safety button:active { transform: scale(.96); }
 
@@ -297,7 +307,7 @@
     <span class="sep">·</span>
     <a class="coffee" href="https://buymeacoffee.com/sajingeo" target="_blank" rel="noopener">☕ Buy me a coffee</a>
     <span class="sep">·</span>
-    <a href="https://github.com/sajingeo/tesfifa" target="_blank" rel="noopener">💻 I'm open source — request a feature</a>
+    <a class="gh" href="https://github.com/sajingeo/tesfifa" target="_blank" rel="noopener">💻 I'm open source — request a feature</a>
   </div>
 </div>
 
@@ -311,10 +321,10 @@
 
 <div class="safety" id="safety">
   <div class="card">
-    <div class="big">🅿️</div>
+    <div class="pbadge">P</div>
     <h2>PARKED USE ONLY</h2>
-    <p>For your safety, only use this website while your car is parked or charging. Never watch while driving.</p>
-    <button id="safetyOk">I'M PARKED</button>
+    <p>For your safety, use this site only while your car is parked or charging.<br><strong>Never watch while driving.</strong></p>
+    <button id="safetyOk">✓&ensp;I'M PARKED</button>
   </div>
 </div>
 
