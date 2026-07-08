@@ -2,6 +2,8 @@
 
 A single-file live match tracker for the 2026 FIFA World Cup, designed for the Tesla in-car browser: dark theme, huge touch targets, no hover interactions, and automatic refresh while parked or charging.
 
+[Live site](https://whileyoucharge.app/)
+
 ![On a Tesla screen](demo.jpg)
 
 **Features**
