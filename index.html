@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚽ World Cup Live — Tesla Edition</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+<style>
+  :root {
+    --bg: #07090f;
+    --panel: rgba(255,255,255,.045);
+    --panel-strong: rgba(255,255,255,.08);
+    --border: rgba(255,255,255,.09);
+    --text: #eef2f8;
+    --muted: #8b94a7;
+    --accent: #00d47e;
+    --live: #ff3b5c;
+    --gold: #ffc542;
+    --radius: 22px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(1200px 600px at 15% -10%, rgba(0,212,126,.07), transparent 60%),
+      radial-gradient(1200px 600px at 85% -10%, rgba(64,120,255,.08), transparent 60%);
+    background-attachment: fixed;
+  }
+  .wrap { max-width: 1760px; margin: 0 auto; padding: 20px 28px 60px; }
+
+  /* ---------- top bar ---------- */
+  .topbar { display: flex; align-items: center; gap: 20px; padding: 6px 4px 18px; }
+  .brand { font-size: 26px; font-weight: 800; letter-spacing: .06em; display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+  .brand .ball { display: inline-block; font-size: 30px; animation: spin 14s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .brand small { font-weight: 600; color: var(--muted); font-size: 15px; letter-spacing: .18em; }
+  .topbar .spacer { flex: 1; }
+  .refresh { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 15px; font-weight: 600; }
+  .ring { width: 34px; height: 34px; transform: rotate(-90deg); }
+  .ring circle { fill: none; stroke-width: 4; }
+  .ring .track { stroke: rgba(255,255,255,.1); }
+  .ring .bar { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+
+  /* ---------- match chips ---------- */
+  .chips { display: flex; gap: 14px; overflow-x: auto; padding: 4px 4px 18px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: 0 0 auto; min-width: 250px; min-height: 84px;
+    background: var(--panel); border: 1.5px solid var(--border); border-radius: var(--radius);
+    padding: 12px 20px; cursor: pointer; user-select: none;
+    display: flex; flex-direction: column; gap: 6px; justify-content: center;
+    transition: transform .18s ease, border-color .25s ease, background .25s ease;
+  }
+  .chip:active { transform: scale(.96); }
+  .chip.sel { border-color: var(--accent); background: rgba(0,212,126,.1); box-shadow: 0 0 30px rgba(0,212,126,.12); }
+  .chip .row { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 700; }
+  .chip .row img { width: 26px; height: 26px; object-fit: contain; }
+  .chip .row .sc { margin-left: auto; font-variant-numeric: tabular-nums; font-size: 21px; }
+  .chip .st { font-size: 13px; font-weight: 700; letter-spacing: .1em; color: var(--muted); display: flex; align-items: center; gap: 7px; }
+  .chip .st.live { color: var(--live); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--live); animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1);} 50% { opacity: .35; transform: scale(.75);} }
+
+  /* ---------- hero scoreboard ---------- */
+  .hero {
+    background: linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+    border: 1.5px solid var(--border); border-radius: 30px;
+    padding: 30px 44px 24px; margin-bottom: 20px; position: relative; overflow: hidden;
+    animation: rise .5s ease both;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(16px);} to { opacity: 1; transform: none;} }
+  .hero .glow { position: absolute; inset: 0; pointer-events: none; }
+  .hero .glow::before, .hero .glow::after {
+    content: ""; position: absolute; top: -40%; width: 45%; height: 180%; filter: blur(70px); opacity: .16;
+  }
+  .hero .glow::before { left: -8%; background: var(--home-color, #4078ff); }
+  .hero .glow::after  { right: -8%; background: var(--away-color, #ff5470); }
+  .scoreline { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 30px; position: relative; }
+  .team { display: flex; align-items: center; gap: 24px; min-width: 0; }
+  .team.away { flex-direction: row-reverse; text-align: right; }
+  .team img { width: 96px; height: 96px; object-fit: contain; filter: drop-shadow(0 6px 18px rgba(0,0,0,.5)); animation: pop .5s ease both; }
+  @keyframes pop { from { transform: scale(.6); opacity: 0;} to { transform: scale(1); opacity: 1;} }
+  .team .nm { font-size: 40px; font-weight: 800; letter-spacing: .01em; line-height: 1.1; }
+  .team .scorers { margin-top: 8px; font-size: 15.5px; color: var(--muted); line-height: 1.55; font-weight: 600; }
+  .mid { text-align: center; min-width: 300px; }
+  .bigscore { font-size: 96px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: .02em; line-height: 1; display: flex; align-items: center; justify-content: center; gap: 22px; }
+  .bigscore .num { display: inline-block; }
+  .bigscore .num.bump { animation: bump .7s cubic-bezier(.2,1.6,.4,1) both; color: var(--gold); }
+  @keyframes bump { 0% { transform: scale(1);} 35% { transform: scale(1.55) rotate(-4deg);} 100% { transform: scale(1);} }
+  .bigscore .sep { font-size: 60px; color: var(--muted); font-weight: 300; }
+  .shootout { font-size: 22px; color: var(--gold); font-weight: 800; margin-top: 4px; }
+  .clockline { margin-top: 12px; font-size: 22px; font-weight: 800; letter-spacing: .12em; display: inline-flex; align-items: center; gap: 12px; padding: 8px 22px; border-radius: 999px; background: rgba(255,255,255,.07); }
+  .clockline.live { color: var(--live); background: rgba(255,59,92,.12); }
+  .venue { margin-top: 12px; color: var(--muted); font-size: 15px; font-weight: 600; letter-spacing: .04em; }
+
+  /* key events strip */
+  .kstrip { display: flex; gap: 10px; overflow-x: auto; margin-top: 20px; padding: 4px 2px; scrollbar-width: none; position: relative; }
+  .kstrip::-webkit-scrollbar { display: none; }
+  .kev {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.06); border: 1px solid var(--border); border-radius: 999px;
+    padding: 8px 16px; font-size: 15px; font-weight: 700; white-space: nowrap; animation: rise .4s ease both;
+  }
+  .kev .min { color: var(--muted); font-size: 13px; }
+  .kev.goal { border-color: rgba(0,212,126,.5); background: rgba(0,212,126,.1); }
+  .kev.red { border-color: rgba(255,59,92,.55); background: rgba(255,59,92,.12); }
+
+  /* ---------- tabs ---------- */
+  .tabs { display: flex; gap: 14px; margin-bottom: 20px; }
+  .tab {
+    flex: 1; min-height: 68px; font-size: 21px; font-weight: 800; letter-spacing: .1em;
+    background: var(--panel); color: var(--muted); border: 1.5px solid var(--border); border-radius: var(--radius);
+    cursor: pointer; transition: all .2s ease; font-family: inherit;
+  }
+  .tab:active { transform: scale(.97); }
+  .tab.sel { background: rgba(0,212,126,.13); color: var(--accent); border-color: var(--accent); }
+
+  .pane { display: none; animation: rise .35s ease both; }
+  .pane.sel { display: block; }
+
+  /* ---------- feed ---------- */
+  .feed { display: flex; flex-direction: column; gap: 12px; }
+  .fitem {
+    background: var(--panel); border: 1.5px solid var(--border); border-radius: 18px;
+    padding: 18px 24px; font-size: 20px; line-height: 1.5; display: flex; gap: 18px; align-items: flex-start;
+    animation: slidein .4s ease both;
+  }
+  @keyframes slidein { from { opacity: 0; transform: translateX(-18px);} to { opacity: 1; transform: none;} }
+  .fitem .min {
+    flex: 0 0 78px; text-align: center; font-weight: 800; font-size: 17px; color: var(--muted);
+    background: rgba(255,255,255,.06); border-radius: 12px; padding: 8px 4px; font-variant-numeric: tabular-nums;
+  }
+  .fitem .ic { flex: 0 0 auto; font-size: 24px; line-height: 1.3; }
+  .fitem.goal { border-color: rgba(0,212,126,.55); background: linear-gradient(90deg, rgba(0,212,126,.14), rgba(0,212,126,.03)); font-weight: 700; }
+  .fitem.goal .min { color: var(--accent); background: rgba(0,212,126,.15); }
+  .fitem.yellow { border-color: rgba(255,197,66,.4); }
+  .fitem.red { border-color: rgba(255,59,92,.55); background: rgba(255,59,92,.07); }
+  .fitem.sub { border-color: rgba(100,150,255,.35); }
+  .fitem.whistle { background: var(--panel-strong); font-weight: 700; }
+
+  /* ---------- stats ---------- */
+  .stats { background: var(--panel); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 30px 40px; }
+  .possess { margin-bottom: 30px; }
+  .possess .lbl { text-align: center; font-size: 15px; font-weight: 800; letter-spacing: .18em; color: var(--muted); margin-bottom: 12px; }
+  .possess .vals { display: flex; justify-content: space-between; font-size: 30px; font-weight: 900; margin-bottom: 10px; font-variant-numeric: tabular-nums; }
+  .pbar { height: 22px; border-radius: 999px; overflow: hidden; display: flex; background: rgba(255,255,255,.08); }
+  .pbar .h { background: linear-gradient(90deg, var(--home-color,#4078ff), color-mix(in srgb, var(--home-color,#4078ff) 70%, white)); transition: width 1s cubic-bezier(.3,1,.3,1); }
+  .pbar .a { background: linear-gradient(90deg, color-mix(in srgb, var(--away-color,#ff5470) 70%, white), var(--away-color,#ff5470)); transition: width 1s cubic-bezier(.3,1,.3,1); flex: 1; }
+  .srow { display: grid; grid-template-columns: 110px 1fr 240px 1fr 110px; align-items: center; gap: 18px; padding: 13px 0; border-top: 1px solid rgba(255,255,255,.05); }
+  .srow .v { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .srow .v.away { text-align: right; }
+  .srow .n { text-align: center; font-size: 16px; font-weight: 700; color: var(--muted); letter-spacing: .06em; }
+  .sbar { height: 12px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; display: flex; }
+  .sbar.home { justify-content: flex-end; }
+  .sbar i { display: block; height: 100%; border-radius: 999px; transition: width .9s cubic-bezier(.3,1,.3,1); }
+  .sbar.home i { background: var(--home-color, #4078ff); }
+  .sbar.away i { background: var(--away-color, #ff5470); }
+
+  /* ---------- lineups ---------- */
+  .pitchwrap { background: var(--panel); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 26px; }
+  .formhead { display: flex; justify-content: space-between; font-size: 22px; font-weight: 800; padding: 0 10px 18px; }
+  .formhead .f { color: var(--muted); font-weight: 700; margin-left: 12px; font-size: 18px; }
+  .pitch {
+    position: relative; width: 100%; aspect-ratio: 16 / 8.2; border-radius: 18px; overflow: hidden;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 10%, rgba(255,255,255,0) 10% 20%),
+      linear-gradient(160deg, #0c3d24, #0a2e1c);
+    border: 2px solid rgba(255,255,255,.14);
+  }
+  .pitch .line { position: absolute; border: 2px solid rgba(255,255,255,.22); }
+  .pitch .half { left: 50%; top: 0; bottom: 0; border-width: 0 0 0 2px; }
+  .pitch .circle { left: 50%; top: 50%; width: 15%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%,-50%); }
+  .pitch .boxL { left: -2px; top: 22%; bottom: 22%; width: 13%; border-left: none; }
+  .pitch .boxR { right: -2px; top: 22%; bottom: 22%; width: 13%; border-right: none; }
+  .player { position: absolute; transform: translate(-50%,-50%); text-align: center; width: 120px; animation: pop .5s ease both; }
+  .player .shirt {
+    width: 52px; height: 52px; border-radius: 50%; margin: 0 auto 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 900; color: #fff;
+    background: var(--home-color, #4078ff);
+    border: 2.5px solid rgba(255,255,255,.85); box-shadow: 0 6px 16px rgba(0,0,0,.45);
+  }
+  .player.away .shirt { background: var(--away-color, #ff5470); }
+  .player .pn { font-size: 14.5px; font-weight: 700; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .player .badge { font-size: 12px; }
+  .subs { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 22px; }
+  .subs h4 { font-size: 15px; letter-spacing: .16em; color: var(--muted); margin-bottom: 12px; font-weight: 800; }
+  .subs .away h4 { text-align: right; }
+  .subrow { display: flex; align-items: center; gap: 12px; padding: 9px 0; font-size: 17.5px; font-weight: 600; border-top: 1px solid rgba(255,255,255,.05); }
+  .subs .away .subrow { flex-direction: row-reverse; }
+  .subrow .j { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,.08); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; flex: 0 0 auto; }
+  .subrow .on { color: var(--accent); font-size: 14px; font-weight: 800; }
+
+  /* ---------- goal overlay ---------- */
+  .goalfx {
+    position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at center, rgba(0,212,126,.28), rgba(4,6,10,.92) 75%);
+    backdrop-filter: blur(6px);
+  }
+  .goalfx.on { display: flex; animation: fxin .3s ease both; }
+  @keyframes fxin { from { opacity: 0; } to { opacity: 1; } }
+  .goalfx .inner { text-align: center; }
+  .goalfx .word {
+    font-size: 170px; font-weight: 900; letter-spacing: .08em; color: #fff;
+    text-shadow: 0 0 60px rgba(0,212,126,.9), 0 10px 40px rgba(0,0,0,.6);
+    animation: goalword 1s cubic-bezier(.2,1.5,.35,1) both;
+  }
+  @keyframes goalword { 0% { transform: scale(.2) rotate(-8deg); opacity: 0;} 60% { transform: scale(1.12) rotate(2deg); opacity: 1;} 100% { transform: scale(1) rotate(0);} }
+  .goalfx .who { font-size: 40px; font-weight: 800; margin-top: 10px; color: var(--gold); animation: rise .6s .25s ease both; }
+  .confetti { position: absolute; top: -20px; width: 14px; height: 22px; border-radius: 4px; animation: fall linear both; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+  /* ---------- empty / status ---------- */
+  .empty { text-align: center; padding: 90px 20px; color: var(--muted); font-size: 24px; font-weight: 600; }
+  .empty .big { font-size: 66px; margin-bottom: 18px; }
+  .err { background: rgba(255,59,92,.1); border: 1.5px solid rgba(255,59,92,.4); color: #ff8ba0; border-radius: 16px; padding: 16px 22px; margin-bottom: 16px; font-weight: 700; display: none; }
+
+  @media (max-width: 1100px) {
+    .team img { width: 64px; height: 64px; }
+    .team .nm { font-size: 28px; }
+    .bigscore { font-size: 64px; }
+    .goalfx .word { font-size: 90px; }
+    .srow { grid-template-columns: 70px 1fr 150px 1fr 70px; }
+    .player { width: 84px; }
+    .player .shirt { width: 40px; height: 40px; font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><span class="ball">⚽</span> WORLD CUP LIVE <small id="roundLbl"></small></div>
+    <div class="spacer"></div>
+    <div class="refresh">
+      <span id="refreshLbl">updating…</span>
+      <svg class="ring" viewBox="0 0 34 34"><circle class="track" cx="17" cy="17" r="14"/><circle class="bar" id="ringBar" cx="17" cy="17" r="14"/></svg>
+    </div>
+  </div>
+
+  <div class="err" id="errBox"></div>
+  <div class="chips" id="chips"></div>
+  <div id="main"></div>
+</div>
+
+<div class="goalfx" id="goalfx">
+  <div class="inner">
+    <div class="word">GOAL!</div>
+    <div class="who" id="goalWho"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const API = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world";
+const R = 14, CIRC = 2 * Math.PI * R;
+document.getElementById("ringBar").setAttribute("stroke-dasharray", CIRC);
+
+const state = {
+  events: [],            // scoreboard events
+  selId: null,           // selected event id
+  summary: null,         // summary of selected event
+  tab: "feed",
+  lastScores: {},        // eventId -> "h-a" for goal detection
+  countdown: 0, interval: 20,
+};
+
+/* ---------------- utilities ---------------- */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+
+function comp(ev) { return ev.competitions?.[0] || ev; }
+function sides(c) {
+  const h = c.competitors.find(x => x.homeAway === "home");
+  const a = c.competitors.find(x => x.homeAway === "away");
+  return [h, a];
+}
+function stateOf(c) { return c.status?.type?.state || "pre"; }
+function logo(team) {
+  return team?.logos?.[0]?.href || team?.logo || `https://a.espncdn.com/i/teamlogos/countries/500/${(team?.abbreviation||"").toLowerCase()}.png`;
+}
+function teamColor(team, fallback) {
+  let c = team?.color ? "#" + team.color : fallback;
+  // brighten very dark colors so they read on the dark theme
+  const n = parseInt(c.slice(1), 16);
+  if (!isNaN(n)) {
+    const r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    if (r + g + b < 150) c = `rgb(${Math.min(255,r+90)},${Math.min(255,g+90)},${Math.min(255,b+90)})`;
+  }
+  return c;
+}
+function statusText(c) {
+  const st = c.status, t = st?.type;
+  if (t?.state === "in") return st.displayClock || "LIVE";
+  if (t?.state === "post") return t.shortDetail || "FT";
+  const d = new Date(c.date || c.startDate);
+  return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+function eventIcon(txt) {
+  const t = (txt || "").toLowerCase();
+  if (t.includes("goal") || t.includes("penalty - scored")) return ["⚽", "goal"];
+  if (t.includes("own goal")) return ["⚽", "goal"];
+  if (t.includes("red card")) return ["🟥", "red"];
+  if (t.includes("yellow")) return ["🟨", "yellow"];
+  if (t.includes("substitution")) return ["🔄", "sub"];
+  if (t.includes("penalty")) return ["🥅", "goal"];
+  if (t.includes("kickoff") || t.includes("halftime") || t.includes("half") || t.includes("end")) return ["⏱", "whistle"];
+  return ["", ""];
+}
+function feedClass(text) {
+  const t = (text || "").toLowerCase();
+  if (t.startsWith("goal!") || t.includes("own goal")) return ["⚽", "goal"];
+  if (t.includes("red card") || t.includes("second yellow")) return ["🟥", "red"];
+  if (t.includes("yellow card")) return ["🟨", "yellow"];
+  if (t.startsWith("substitution")) return ["🔄", "sub"];
+  if (t.startsWith("match ends") || t.startsWith("first half ends") || t.startsWith("second half ends") || t.startsWith("first half begins") || t.startsWith("second half begins") || t.includes("kicks off")) return ["⏱", "whistle"];
+  if (t.includes("var")) return ["📺", "whistle"];
+  if (t.includes("missed") && t.includes("penalty")) return ["🥅", "yellow"];
+  return ["", ""];
+}
+
+/* ---------------- fetching ---------------- */
+async function getJSON(url) {
+  const r = await fetch(url, { cache: "no-store" });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+
+async function refresh() {
+  try {
+    const sb = await getJSON(API + "/scoreboard");
+    $("errBox").style.display = "none";
+    state.events = (sb.events || []).slice().sort((a, b) => {
+      const rank = e => ({ in: 0, pre: 1, post: 2 }[stateOf(comp(e))] ?? 3);
+      return rank(a) - rank(b) || new Date(comp(a).date) - new Date(comp(b).date);
+    });
+    const round = sb.leagues?.[0]?.season?.type?.name;
+    $("roundLbl").textContent = round ? "· " + round.toUpperCase() : "";
+
+    if (!state.selId || !state.events.find(e => e.id === state.selId)) {
+      state.selId = state.events[0]?.id || null;
+    }
+    detectGoals();
+    renderChips();
+
+    if (state.selId) {
+      state.summary = await getJSON(API + "/summary?event=" + state.selId);
+      renderMain();
+    } else {
+      $("main").innerHTML = `<div class="empty"><div class="big">🏟️</div>No matches scheduled today.<br>Check back on the next matchday!</div>`;
+    }
+    const anyLive = state.events.some(e => stateOf(comp(e)) === "in");
+    state.interval = anyLive ? 20 : 90;
+  } catch (e) {
+    $("errBox").textContent = "⚠️ Connection hiccup — retrying automatically (" + e.message + ")";
+    $("errBox").style.display = "block";
+    state.interval = 15;
+  }
+  state.countdown = state.interval;
+}
+
+function detectGoals() {
+  for (const ev of state.events) {
+    const c = comp(ev);
+    const [h, a] = sides(c);
+    const key = `${h?.score ?? ""}-${a?.score ?? ""}`;
+    const prev = state.lastScores[ev.id];
+    if (prev !== undefined && prev !== key && stateOf(c) === "in") {
+      const [ph, pa] = prev.split("-").map(Number);
+      const scorer = (+h.score > ph) ? h : (+a.score > pa) ? a : null;
+      if (scorer) celebrate(scorer.team?.displayName || "");
+    }
+    state.lastScores[ev.id] = key;
+  }
+}
+
+/* ---------------- goal celebration ---------------- */
+function celebrate(teamName) {
+  const fx = $("goalfx");
+  $("goalWho").textContent = teamName;
+  fx.querySelectorAll(".confetti").forEach(n => n.remove());
+  const colors = ["#00d47e", "#ffc542", "#4078ff", "#ff5470", "#ffffff"];
+  for (let i = 0; i < 60; i++) {
+    const c = document.createElement("div");
+    c.className = "confetti";
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.background = colors[i % colors.length];
+    c.style.animationDuration = (2 + Math.random() * 2.5) + "s";
+    c.style.animationDelay = Math.random() * 0.8 + "s";
+    fx.appendChild(c);
+  }
+  fx.classList.add("on");
+  clearTimeout(celebrate._t);
+  celebrate._t = setTimeout(() => fx.classList.remove("on"), 5200);
+}
+$("goalfx").addEventListener("click", () => $("goalfx").classList.remove("on"));
+
+/* ---------------- rendering ---------------- */
+function renderChips() {
+  const box = $("chips");
+  box.innerHTML = state.events.map(ev => {
+    const c = comp(ev);
+    const [h, a] = sides(c);
+    const live = stateOf(c) === "in";
+    const sel = ev.id === state.selId;
+    return `<div class="chip ${sel ? "sel" : ""}" data-id="${ev.id}">
+      <div class="row"><img src="${logo(h.team)}" alt=""> ${esc(h.team.abbreviation)}
+        <span class="sc">${esc(h.score ?? "")}${h.score != null ? " – " : "vs"}${esc(a.score ?? "")}</span>
+        ${esc(a.team.abbreviation)} <img src="${logo(a.team)}" alt=""></div>
+      <div class="st ${live ? "live" : ""}">${live ? '<span class="dot"></span>' : ""}${esc(statusText(c))}</div>
+    </div>`;
+  }).join("");
+  box.querySelectorAll(".chip").forEach(el => el.addEventListener("click", async () => {
+    if (state.selId === el.dataset.id) return;
+    state.selId = el.dataset.id;
+    renderChips();
+    $("main").style.opacity = ".4";
+    try { state.summary = await getJSON(API + "/summary?event=" + state.selId); renderMain(); } catch {}
+    $("main").style.opacity = "1";
+  }));
+}
+
+function renderMain() {
+  const s = state.summary;
+  if (!s) return;
+  const c = s.header.competitions[0];
+  const [h, a] = sides(c);
+  const hc = teamColor(h.team, "#4078ff"), ac = teamColor(a.team, "#ff5470");
+  document.documentElement.style.setProperty("--home-color", hc);
+  document.documentElement.style.setProperty("--away-color", ac);
+  const live = stateOf(c) === "in";
+  const key = (s.keyEvents || []);
+  const scorers = side => key
+    .filter(k => k.scoringPlay && !k.shootout && k.team?.id === side.team.id)
+    .map(k => `⚽ ${esc(k.participants?.[0]?.athlete?.displayName || "")} ${esc(k.clock?.displayValue || "")}`)
+    .join("<br>");
+
+  const prevScores = renderMain._sc || {};
+  const bump = (id, val) => prevScores[id] !== undefined && prevScores[id] !== val ? "bump" : "";
+  renderMain._sc = { h: h.score, a: a.score };
+
+  $("main").innerHTML = `
+  <div class="hero"><div class="glow"></div>
+    <div class="scoreline">
+      <div class="team home">
+        <img src="${logo(h.team)}" alt="">
+        <div><div class="nm">${esc(h.team.displayName)}</div><div class="scorers">${scorers(h)}</div></div>
+      </div>
+      <div class="mid">
+        <div class="bigscore">
+          <span class="num ${bump("h", h.score)}">${esc(h.score ?? "–")}</span>
+          <span class="sep">:</span>
+          <span class="num ${bump("a", a.score)}">${esc(a.score ?? "–")}</span>
+        </div>
+        ${h.shootoutScore != null ? `<div class="shootout">PENS ${esc(h.shootoutScore)} – ${esc(a.shootoutScore)}</div>` : ""}
+        <div class="clockline ${live ? "live" : ""}">${live ? '<span class="dot"></span>' : ""}${esc(statusText(c))}</div>
+        <div class="venue">${esc(s.gameInfo?.venue?.fullName || "")}${s.gameInfo?.venue?.address?.city ? " · " + esc(s.gameInfo.venue.address.city) : ""}</div>
+      </div>
+      <div class="team away">
+        <img src="${logo(a.team)}" alt="">
+        <div><div class="nm">${esc(a.team.displayName)}</div><div class="scorers">${scorers(a)}</div></div>
+      </div>
+    </div>
+    <div class="kstrip">${key.filter(k => k.scoringPlay || /card|substit/i.test(k.type?.text || "")).map(k => {
+      const [ic, cls] = eventIcon(k.type?.text);
+      return `<span class="kev ${cls}"><span class="min">${esc(k.clock?.displayValue || "")}</span> ${ic} ${esc(k.participants?.[0]?.athlete?.shortName || k.shortText || k.type?.text || "")}</span>`;
+    }).join("")}</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab ${state.tab === "feed" ? "sel" : ""}" data-t="feed">▶ PLAY-BY-PLAY</button>
+    <button class="tab ${state.tab === "stats" ? "sel" : ""}" data-t="stats">📊 STATS</button>
+    <button class="tab ${state.tab === "lineup" ? "sel" : ""}" data-t="lineup">👥 LINEUPS</button>
+  </div>
+
+  <div class="pane ${state.tab === "feed" ? "sel" : ""}" id="pane-feed">${renderFeed(s)}</div>
+  <div class="pane ${state.tab === "stats" ? "sel" : ""}" id="pane-stats">${renderStats(s, h, a)}</div>
+  <div class="pane ${state.tab === "lineup" ? "sel" : ""}" id="pane-lineup">${renderLineups(s)}</div>`;
+
+  document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
+    state.tab = b.dataset.t;
+    document.querySelectorAll(".tab").forEach(x => x.classList.toggle("sel", x === b));
+    document.querySelectorAll(".pane").forEach(x => x.classList.toggle("sel", x.id === "pane-" + state.tab));
+    if (state.tab === "stats") animateBars();
+  }));
+  if (state.tab === "stats") animateBars();
+}
+
+function renderFeed(s) {
+  const items = (s.commentary || []).slice().sort((x, y) => y.sequence - x.sequence);
+  if (!items.length) return `<div class="empty"><div class="big">📝</div>Play-by-play will appear here at kickoff.</div>`;
+  return `<div class="feed">` + items.slice(0, 80).map((it, i) => {
+    const [ic, cls] = feedClass(it.text);
+    return `<div class="fitem ${cls}" style="animation-delay:${Math.min(i * 30, 400)}ms">
+      <span class="min">${esc(it.time?.displayValue || "·")}</span>
+      ${ic ? `<span class="ic">${ic}</span>` : ""}
+      <span>${esc(it.text)}</span>
+    </div>`;
+  }).join("") + `</div>`;
+}
+
+const STAT_ROWS = [
+  ["possessionPct", "POSSESSION %"], ["totalShots", "SHOTS"], ["shotsOnTarget", "ON TARGET"],
+  ["wonCorners", "CORNERS"], ["accuratePasses", "PASSES COMPLETED"], ["foulsCommitted", "FOULS"],
+  ["offsides", "OFFSIDES"], ["yellowCards", "YELLOW CARDS"], ["redCards", "RED CARDS"], ["saves", "SAVES"],
+];
+function statOf(team, name) {
+  const s = (team?.statistics || []).find(x => x.name === name);
+  return s ? parseFloat(s.displayValue) || 0 : null;
+}
+function renderStats(s, h, a) {
+  const teams = s.boxscore?.teams || [];
+  const th = teams.find(t => t.team?.id === h.team.id), ta = teams.find(t => t.team?.id === a.team.id);
+  if (!th || !ta || !(th.statistics || []).length) return `<div class="empty"><div class="big">📊</div>Stats will appear here at kickoff.</div>`;
+  const ph = statOf(th, "possessionPct") ?? 50, pa = statOf(ta, "possessionPct") ?? (100 - ph);
+  let rows = "";
+  for (const [name, label] of STAT_ROWS) {
+    if (name === "possessionPct") continue;
+    const vh = statOf(th, name), va = statOf(ta, name);
+    if (vh === null && va === null) continue;
+    const max = Math.max(vh || 0, va || 0, 1);
+    rows += `<div class="srow">
+      <div class="v">${vh ?? 0}</div>
+      <div class="sbar home"><i data-w="${(vh || 0) / max * 100}"></i></div>
+      <div class="n">${label}</div>
+      <div class="sbar away"><i data-w="${(va || 0) / max * 100}"></i></div>
+      <div class="v away">${va ?? 0}</div>
+    </div>`;
+  }
+  return `<div class="stats">
+    <div class="possess">
+      <div class="lbl">POSSESSION</div>
+      <div class="vals"><span>${ph}%</span><span>${pa}%</span></div>
+      <div class="pbar"><span class="h" data-w="${ph}"></span><span class="a"></span></div>
+    </div>${rows}</div>`;
+}
+function animateBars() {
+  requestAnimationFrame(() => {
+    document.querySelectorAll("#pane-stats [data-w]").forEach(el => { el.style.width = el.dataset.w + "%"; });
+  });
+}
+
+function renderLineups(s) {
+  const rosters = s.rosters || [];
+  const home = rosters.find(r => r.homeAway === "home"), away = rosters.find(r => r.homeAway === "away");
+  if (!home?.roster?.some(p => p.starter)) return `<div class="empty"><div class="big">👥</div>Lineups will appear here about an hour before kickoff.</div>`;
+
+  const place = (r, isAway) => {
+    const starters = r.roster.filter(p => p.starter)
+      .sort((x, y) => (+x.formationPlace || 99) - (+y.formationPlace || 99));
+    const rows = String(r.formation || "4-4-2").split("-").map(Number).filter(n => n > 0);
+    const cols = [starters.slice(0, 1)]; // GK
+    let idx = 1;
+    for (const n of rows) { cols.push(starters.slice(idx, idx + n)); idx += n; }
+    let html = "";
+    cols.forEach((col, ci) => {
+      const x = 6 + (ci / Math.max(cols.length - 1, 1)) * 38;   // 6%..44% of pitch width
+      col.forEach((p, ri) => {
+        const y = ((ri + 1) / (col.length + 1)) * 100;
+        const px = isAway ? 100 - x : x;
+        const off = p.subbedOut ? " ⬇" : "";
+        const card = (p.stats || []).some(st => st.name === "redCards" && st.value > 0) ? " 🟥"
+                   : (p.stats || []).some(st => st.name === "yellowCards" && st.value > 0) ? " 🟨" : "";
+        const goals = (p.stats || []).find(st => st.name === "totalGoals" && st.value > 0);
+        html += `<div class="player ${isAway ? "away" : ""}" style="left:${px}%;top:${y}%;animation-delay:${(ci * 4 + ri) * 45}ms">
+          <div class="shirt">${esc(p.jersey || "")}</div>
+          <div class="pn">${esc(p.athlete?.shortName || p.athlete?.displayName || "")}<span class="badge">${goals ? " ⚽" + (goals.value > 1 ? "×" + goals.value : "") : ""}${card}${off}</span></div>
+        </div>`;
+      });
+    });
+    return html;
+  };
+
+  const subsList = (r, cls) => {
+    const subs = r.roster.filter(p => !p.starter && (p.subbedIn || p.active !== false));
+    const inFirst = subs.sort((x, y) => (y.subbedIn === true) - (x.subbedIn === true)).slice(0, 12);
+    return `<div class="${cls}"><h4>${esc(r.team?.displayName || "").toUpperCase()} — SUBSTITUTES</h4>` +
+      inFirst.map(p => `<div class="subrow"><span class="j">${esc(p.jersey || "")}</span>
+        <span>${esc(p.athlete?.displayName || "")}</span>
+        ${p.subbedIn ? '<span class="on">⬆ ON</span>' : ""}</div>`).join("") + `</div>`;
+  };
+
+  return `<div class="pitchwrap">
+    <div class="formhead">
+      <span>${esc(home.team?.displayName || "")} <span class="f">${esc(home.formation || "")}</span></span>
+      <span><span class="f">${esc(away.formation || "")}</span> ${esc(away.team?.displayName || "")}</span>
+    </div>
+    <div class="pitch">
+      <div class="line half"></div><div class="line circle"></div>
+      <div class="line boxL"></div><div class="line boxR"></div>
+      ${place(home, false)}${away ? place(away, true) : ""}
+    </div>
+    <div class="subs">${subsList(home, "home")}${away ? subsList(away, "away") : ""}</div>
+  </div>`;
+}
+
+/* ---------------- refresh loop ---------------- */
+setInterval(() => {
+  state.countdown = Math.max(0, state.countdown - 1);
+  const frac = state.interval ? state.countdown / state.interval : 0;
+  $("ringBar").setAttribute("stroke-dashoffset", CIRC * (1 - frac));
+  $("refreshLbl").textContent = state.countdown > 0 ? `refresh in ${state.countdown}s` : "updating…";
+  if (state.countdown === 0) { state.countdown = -1; refresh(); }
+}, 1000);
+
+refresh();
+</script>
+</body>
+</html>
