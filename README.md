@@ -2,6 +2,8 @@
 
 A single-file live match tracker for the 2026 FIFA World Cup, designed for the Tesla in-car browser: dark theme, huge touch targets, no hover interactions, and automatic refresh while parked or charging.
 
+![On a Tesla screen](demo.jpg)
+
 **Features**
 - Live scores for every match of the day, with a match switcher
 - Play-by-play commentary feed (goals, cards, subs highlighted)
@@ -36,3 +38,12 @@ Then open `https://<your-username>.github.io/tesfifa/` in the Tesla browser and 
 
 - Tracks the FIFA World Cup (`fifa.world`). For the Club World Cup, change `API` in `index.html` to use `fifa.cwc`.
 - Tap the screen during a goal celebration to dismiss it early.
+- On phones, the app shows a redirect message pointing to the Tesla-friendly URL — this is a Tesla-screen experience, not a mobile one.
+
+## Support
+
+If this made a charging stop more fun, [☕ buy me a coffee](https://buymeacoffee.com/sajingeo).
+
+## License
+
+[MIT](LICENSE) — powered by [ESPN](https://www.espn.com/soccer/).
