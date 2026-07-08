@@ -4,6 +4,8 @@ A single-file live match tracker for the 2026 FIFA World Cup, designed for the T
 
 [Live site](https://whileyoucharge.app/)
 
+Always free and no ads! If you think of a something send me a PR ❤️
+
 ![On a Tesla screen](demo.jpg)
 
 **Features**
