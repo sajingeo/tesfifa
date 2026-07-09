@@ -135,6 +135,7 @@
     background: rgba(255,255,255,.06); border-radius: 12px; padding: 8px 4px; font-variant-numeric: tabular-nums;
   }
   .fitem .ic { flex: 0 0 auto; font-size: 24px; line-height: 1.3; }
+  .fitem .tbar { flex: 0 0 6px; align-self: stretch; border-radius: 999px; }
   .fitem.goal { border-color: rgba(0,212,126,.55); background: linear-gradient(90deg, rgba(0,212,126,.14), rgba(0,212,126,.03)); font-weight: 700; }
   .fitem.goal .min { color: var(--accent); background: rgba(0,212,126,.15); }
   .fitem.yellow { border-color: rgba(255,197,66,.4); }
@@ -391,7 +392,8 @@ function statusText(c) {
   if (t?.state === "in") return st.displayClock || "LIVE";
   if (t?.state === "post") return t.shortDetail || "FT";
   const d = new Date(c.date || c.startDate);
-  return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })
+    + " · " + d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 function eventIcon(txt) {
   const t = (txt || "").toLowerCase();
@@ -404,8 +406,14 @@ function eventIcon(txt) {
   if (t.includes("kickoff") || t.includes("halftime") || t.includes("half") || t.includes("end")) return ["⏱", "whistle"];
   return ["", ""];
 }
+function feedText(text) {
+  const t = String(text || "");
+  if (/delay in match.*drinks break/i.test(t)) return "Hydration break.";
+  return t.replace(/drinks break/gi, "hydration break");
+}
 function feedClass(text) {
   const t = (text || "").toLowerCase();
+  if (t.includes("drinks break") || t.includes("water break")) return ["💧", "whistle"];
   if (t.startsWith("goal!") || t.includes("own goal")) return ["⚽", "goal"];
   if (t.includes("red card") || t.includes("second yellow")) return ["🟥", "red"];
   if (t.includes("yellow card")) return ["🟨", "yellow"];
@@ -444,7 +452,7 @@ async function refresh() {
       state.summary = await getJSON(API + "/summary?event=" + state.selId);
       renderMain();
     } else {
-      $("main").innerHTML = `<div class="empty"><div class="big">🏟️</div>No matches scheduled today.<br>Check back on the next matchday!</div>`;
+      $("main").innerHTML = `<div class="empty"><div class="big">🏟️</div>No matches scheduled for ${esc(new Date().toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" }))}.<br>Check back on the next matchday!</div>`;
     }
     const anyLive = state.events.some(e => stateOf(comp(e)) === "in");
     state.interval = anyLive ? 20 : 90;
@@ -586,12 +594,25 @@ function renderMain() {
 function renderFeed(s) {
   const items = (s.commentary || []).slice().sort((x, y) => y.sequence - x.sequence);
   if (!items.length) return `<div class="empty"><div class="big">📝</div>Play-by-play will appear here at kickoff.</div>`;
+  const [h, a] = sides(s.header.competitions[0]);
+  const hc = teamColor(h.team, "#4078ff"), ac = teamColor(a.team, "#ff5470");
+  // commentary mentions the player's team in parens, e.g. "Foul by Kane (England)."
+  const teamColorOf = (txt) => {
+    const ih = txt.indexOf("(" + h.team.displayName + ")");
+    const ia = txt.indexOf("(" + a.team.displayName + ")");
+    if (ih < 0 && ia < 0) return null;
+    if (ih < 0) return ac;
+    if (ia < 0) return hc;
+    return ih < ia ? hc : ac;
+  };
   return `<div class="feed">` + items.slice(0, 80).map((it, i) => {
     const [ic, cls] = feedClass(it.text);
+    const tc = teamColorOf(String(it.text || ""));
     return `<div class="fitem ${cls}" style="animation-delay:${Math.min(i * 30, 400)}ms">
+      ${tc ? `<span class="tbar" style="background:${tc}"></span>` : ""}
       <span class="min">${esc(it.time?.displayValue || "·")}</span>
       ${ic ? `<span class="ic">${ic}</span>` : ""}
-      <span>${esc(it.text)}</span>
+      <span>${esc(feedText(it.text))}</span>
     </div>`;
   }).join("") + `</div>`;
 }
